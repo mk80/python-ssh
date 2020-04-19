@@ -53,10 +53,14 @@ if hostname.find(":") >= 0:
     hostname, portstr = hostname.split(":")
     port = int(portstr)
 
-# connect
+# setup client and load key
 try:
-    client = SSHClient()
-    client.load_system_host_keys(filename="~/.ssh/id_rsa")
+    client = paramiko.SSHClient()
+    client.load_system_host_keys()
+    client.set_missing_host_key_policy(paramiko.WarningPolicy())
+except Exception as e:
+    print("caught error... " + str(e))
+    sys.exit(1)
 
 # username
 if username == '':
@@ -65,4 +69,24 @@ if username == '':
     if len(username) == 0:
         username = default_username
 
+# command
+command = ''
+command = input("Command: ")
 
+# connect
+try:
+    client.connect(hostname)
+    client_stdin, client_stdout, client_stderr = client.exec_command(command)
+except Exception as e:
+    print("caught error... " + str(e))
+    sys.exit(1)
+
+char_encoding = 'utf-8'
+stdout = client_stdout.read()
+stderr = client_stderr.read()
+
+print("\nstdout: " + stdout.decode(char_encoding) + "\nstderr: " + stderr.decode(char_encoding))
+
+client.close()
+
+exit
